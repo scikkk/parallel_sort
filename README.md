@@ -1,12 +1,22 @@
 # 实验报告
 
-王科 201300008
+王科 201300008 scik@smail.nju.edu.cn
+
+
 
 ## 1 实验环境
 
 CPU：使用4核8线程处理器，支持时分复用，操作系统统一调度。
 
 语言：Java（jdk-11.0.12.7）
+
+程序入口在 `.\src\Manager.java`
+
+使用 `jdk-11.0.12.7-hotspot\bin\java.exe`
+
+排序结果保存在 `.\results` 中
+
+
 
 ## 2 算法伪代码
 
@@ -37,7 +47,11 @@ CPU：使用4核8线程处理器，支持时分复用，操作系统统一调度
 | 串行 | 5ms      | 2156ms   | 9ms      |
 | 并行 | 1ms      | 357ms    | 4ms      |
 
+程序原始输出为：
+
 <img src=".\image\res.png" alt="image-20221122225223496" style="zoom: 33%;" />
+
+
 
 ## 4 结果分析
 
@@ -47,7 +61,8 @@ CPU：使用4核8线程处理器，支持时分复用，操作系统统一调度
 
 可以看到，串行算法执行时间和数据集大小具有线性关系，符合常理。但是三个并行程序皆变化不大，应该是效率较高，数据集过小导致；除此之外，随着数据集变大，有的并行算法，比如4线程并行，并不是单调递增，应该是由于程序实际是运行在虚拟机上，受操作系统调度所导致，各线程实际运行时间并不完全相同。
 
-<img src=".\image\快速排序.png" alt="快速排序" style="zoom: 33%;" />
+<img src=".\image\快速排序.png" alt="快速排序" style="zoom: 25%;" />
+
 
 ### 4.2 枚举排序
 
@@ -59,19 +74,19 @@ CPU：使用4核8线程处理器，支持时分复用，操作系统统一调度
 
 发现当处理器个数翻倍，程序实际运行时间略高于原运行时间的一半，这符合常理，因为并行线程间有额外的通信开销等；当处理器个数越来越多，程序执行时间几乎不再下降，此时并行的额外开销已经大于并行算法节省的时间。
 
-<img src=".\image\枚举排序.png" alt="枚举排序" style="zoom: 33%;" />
+<img src=".\image\枚举排序.png" alt="枚举排序" style="zoom: 25%;" />
 
 ### 4.3 归并排序
 
 发现30000个数据对于归并排序而言也太少，故也取10万到100万大小的数据集，以数据集大小为横轴，排序时间为纵轴，绘成下图。
 
-<img src=".\image\归并排序_no.png" alt="归并排序_no" style="zoom: 33%;" />
+<img src=".\image\归并排序_no.png" alt="归并排序_no" style="zoom: 25%;" />
 
 发现排序时间杂乱无章，没有规律，考虑到操作系统会进行进程调度，排序时间具有随机性，受其他同一时间志在运行的进程影响。故多次运行排序程序，取运行时间均值，绘成下图。
 
 发现排序时间3线程并行最快，串行最慢，而4线程并行却慢于三线程，应该是由于归并排序并行化的额外开销较大，3线程已满足需求，4线程的并行开销已经开始超过并行算法节约的时间。
 
-<img src=".\image\归并排序.png" alt="归并排序" style="zoom: 33%;" />
+<img src=".\image\归并排序.png" alt="归并排序" style="zoom: 25%;" />
 
 
 
@@ -127,10 +142,10 @@ for (int k = left; k <= right; k++) {
 long time = 0;
 for (int k = 0; k < rerun_times; k++) {
     load();
-    long sort_start_t = System.currentTimeMillis();
-    sort(nums, 0, nums_len - 1);
-    long sortEndTime = System.currentTimeMillis();
-    time += sortEndTime - msort_start_t;
+    long msort_start = System.currentTimeMillis();
+    MergeSort.msort(nums, 0, nums_len - 1);
+    long msort_end = System.currentTimeMillis();
+    time += msort_end - msort_start;
 }
 System.out.println(time / rerun_times + "ms");
 ```
