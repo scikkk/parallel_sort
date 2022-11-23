@@ -2,7 +2,7 @@
  * @Author: scikkk 203536673@qq.com
  * @Date: 2018-12-29 13:11:40
  * @LastEditors: scikkk
- * @LastEditTime: 2022-11-21 01:46:21
+ * @LastEditTime: 2022-11-23 15:36:42
  * @Description: EnumSort
  */
 
@@ -14,64 +14,61 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class EnumSort implements Runnable {
-	private int begin, end, pos;
-	private int[] array;
-	private int[] brrby;
-	CountDownLatch mergeSignal;
+	private int left, right, pos;
+	private int[] nums;
+	private int[] buf_nums;
+	CountDownLatch end_signal;
 
-	EnumSort(int[] array, int[] brrby, int begin, int end, int pos, CountDownLatch mergeSignal) {
-		this.begin = begin;
-		this.end = end;
+	EnumSort(int[] nums, int[] buf_nums, int left, int right, int pos, CountDownLatch end_signal) {
+		this.left = left;
+		this.right = right;
 		this.pos = pos;
-		this.array = array;
-		this.brrby = brrby;
-		this.mergeSignal = mergeSignal;
+		this.nums = nums;
+		this.buf_nums = buf_nums;
+		this.end_signal = end_signal;
 	}
 
-	public static void esort(int[] array, int p, int q) throws IOException {
-		int[] brrby = new int[q - p + 1];
-		for (int i = p; i <= q; i++) {
+	public static void esort(int[] nums, int left, int right) throws IOException {
+		int[] buf_nums = new int[right - left + 1];
+		for (int i = left; i <= right; i++) {
 			int rank = 0;
-			for (int j = 0; j <= q; j++) {
-				if ((array[i] > array[j]) || ((array[i] == array[j] && i > j)))
+			for (int j = 0; j <= right; j++) {
+				if ((nums[i] > nums[j]) || ((nums[i] == nums[j] && i > j))) {
 					rank++;
+				}
 			}
-			brrby[rank] = array[i];
+			buf_nums[rank] = nums[i];
 		}
-		for (int i = 0; i <= q; i++) {
-			array[i] = brrby[i];
+		for (int k = 0; k <= right; k++) {
+			nums[k] = buf_nums[k];
 		}
 
 	}
 
-	public static void pesort(int[] array, int Begin, int End) throws IOException, InterruptedException {
-		int[] Brrby = new int[End - Begin + 1];
-		CountDownLatch mergeSignal = new CountDownLatch((End - Begin + 1));
-		ExecutorService exec = Executors.newFixedThreadPool(8);
-		for (int i = Begin; i <= End; i++) {
-			// 线程池
-			exec.execute(new EnumSort(array, Brrby, Begin, End, i, mergeSignal));
+	public static void pesort(int[] nums, int left, int right, int p_num) throws IOException, InterruptedException {
+		int[] buf_nums = new int[right - left + 1];
+		CountDownLatch end_signal = new CountDownLatch((right - left + 1));
+		ExecutorService exec = Executors.newFixedThreadPool(p_num);
+		for (int k = left; k <= right; k++) {
+			exec.execute(new EnumSort(nums, buf_nums, left, right, k, end_signal));
 		}
 		exec.shutdown();
-
-		mergeSignal.await();
-
-		for (int i = Begin; i <= End; i++) {
-			array[i] = Brrby[i];
+		end_signal.await();
+		for (int k = left; k <= right; k++) {
+			nums[k] = buf_nums[k];
 		}
-
 	}
 
 	@Override
 	public void run() {
 		int rank = 0;
-		for (int j = begin; j <= end; j++) {
-			if ((array[pos] > array[j]) || ((array[pos] == array[j] && pos > j)))
+		for (int j = left; j <= right; j++) {
+			if ((nums[pos] > nums[j]) || ((nums[pos] == nums[j] && pos > j))) {
 				rank++;
+			}
 		}
-		brrby[rank] = array[pos];
-		mergeSignal.countDown();
-		// System.out.println(brrby[rank]);
+		buf_nums[rank] = nums[pos];
+		end_signal.countDown();
 	}
 
 }

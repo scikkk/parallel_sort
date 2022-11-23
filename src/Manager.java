@@ -3,7 +3,7 @@
  * @Author: scikkk 203536673@qq.com
  * @Date: 2018-12-29 13:11:40
  * @LastEditors: scikkk
- * @LastEditTime: 2022-11-21 01:46:24
+ * @LastEditTime: 2022-11-23 15:31:56
  * @Description: Main
  */
 import sort.EnumSort;
@@ -13,12 +13,13 @@ import sort.MergeSort;
 import java.io.*;
 
 public class Manager {
-	private static int[] array = new int[100000];
-	private static int dataLen;
+	private static int[] nums = new int[10000000];
+	private static int nums_len;
+	private static int rerun_times = 10;
 
-	public static boolean test() {
-		for (int i = 0; i < dataLen - 1; i++) {
-			if (array[i] > array[i + 1]) {
+	private static boolean test() {
+		for (int i = 0; i < nums_len - 1; i++) {
+			if (nums[i] > nums[i + 1]) {
 				System.out.println("错误:" + i);
 				return false;
 			}
@@ -26,100 +27,156 @@ public class Manager {
 		return true;
 	}
 
-	public static void load() throws IOException {
-		String filename = ".\\src\\random.txt";
+	private static void load() throws IOException {
+		String filename = ".\\random.txt";
 		BufferedReader readTxt = null;
 		readTxt = new BufferedReader(new FileReader(new File(filename)));
-		String txtLine = "";
-		String str = "";
-		while ((txtLine = readTxt.readLine()) != null) {
-			str += txtLine;
+		String sline = "";
+		String sdata = "";
+		while ((sline = readTxt.readLine()) != null) {
+			sdata += sline;
 		}
-		String[] sarray = str.split(" ");
-		for (int i = 0; i < sarray.length; i++) {
-			array[i] = Integer.parseInt(sarray[i]);
-			// System.out.println(sarray[i]);
+		String[] snums = sdata.split(" ");
+		nums_len = snums.length;
+		for (int i = 0; i < nums_len; i++) {
+			nums[i] = Integer.parseInt(snums[i]);
 		}
-		dataLen = sarray.length;
-		System.out.println("实际大小:" + dataLen);
 	}
 
-	public static void save(int label) throws IOException {
-		FileWriter writer = new FileWriter(String.format("order%d.txt", label));
-		for (int i = 0; i < dataLen; i++)
-			writer.write(array[i] + "\r\n");
-		writer.close();
+	private static void save(int label) throws IOException {
+		FileWriter fw = new FileWriter(String.format(".\\results\\order%d.txt", label));
+		for (int i = 0; i < nums_len; i++) {
+			fw.write(nums[i] + "\n");
+		}
+		fw.close();
 	}
 
-	public static void main(String[] args) throws InterruptedException, IOException {
-		System.out.println("程序开始！\n");
-		System.out.println("排序开始！\n");
-
+	private static void quick_sort() throws InterruptedException, IOException {
 		// 串行快排
 		load();
-		long qsprtStartTime = System.currentTimeMillis();
-		QuickSort.qsort(array, 0, dataLen - 1);
-		long qsortEndTime = System.currentTimeMillis();
+		long qsort_start = System.currentTimeMillis();
+		QuickSort.qsort(nums, 0, nums_len - 1);
+		long qsort_end = System.currentTimeMillis();
 		save(1);
-		System.out.println("测试结果:" + test());
-		System.out.println("串行快速排序完成！\n");
-
+		System.out.println("测试结果:" + test() + ";\t" + "串行快排:" + (qsort_end -
+				qsort_start) + "ms");
 		// 并行快排
 		load();
-		long pqsortStartTime = System.currentTimeMillis();
-		QuickSort.pqsort(array, 0, dataLen - 1);
-		long pqsortEndTime = System.currentTimeMillis();
+		long p2qsort_start = System.currentTimeMillis();
+		QuickSort.p4qsort(nums, 0, nums_len - 1);
+		long p2qsort_end = System.currentTimeMillis();
 		save(2);
-		System.out.println("测试结果:" + test());
-		System.out.println("并行快速排序完成！\n");
-
-		// 串行归并
+		System.out.println("测试结果:" + test() + ";\t" + "2线程并行快排:" + (p2qsort_end -
+				p2qsort_start) + "ms");
+		// 并行快排
 		load();
-		long msortStartTime = System.currentTimeMillis();
-		MergeSort.msort(array, 0, dataLen - 1);
-		long msortEndTime = System.currentTimeMillis();
-		save(3);
-		System.out.println("测试结果:" + test());
-		System.out.println("串行归并排序完成！\n");
-
-		// 并行归并
+		long p4qsort_start = System.currentTimeMillis();
+		QuickSort.p4qsort(nums, 0, nums_len - 1);
+		long p4qsort_end = System.currentTimeMillis();
+		save(2);
+		System.out.println("测试结果:" + test() + ";\t" + "4线程并行快排:" + (p4qsort_end -
+				p4qsort_start) + "ms");
+		// 并行快排
 		load();
-		long pmsortStartTime = System.currentTimeMillis();
-		MergeSort.pmsort(array, 0, dataLen - 1);
-		long pmsortEndTime = System.currentTimeMillis();
-		save(4);
-		System.out.println("测试结果:" + test());
-		System.out.println("并行归并排序完成！\n");
+		long p8qsort_start = System.currentTimeMillis();
+		QuickSort.p8qsort(nums, 0, nums_len - 1);
+		long p8qsort_end = System.currentTimeMillis();
+		save(2);
+		System.out.println("测试结果:" + test() + ";\t" + "8线程并行快排:" + (p8qsort_end -
+				p8qsort_start) + "ms");
+	}
 
+	private static void enum_sort() throws IOException, InterruptedException {
 		// 串行枚举
 		load();
-		long esortStartTime = System.currentTimeMillis();
-		EnumSort.esort(array, 0, dataLen - 1);
-		long esortEndTime = System.currentTimeMillis();
-		save(5);
-		System.out.println("测试结果:" + test());
-		System.out.println("串行枚举排序完成！\n");
-
+		long esort_start = System.currentTimeMillis();
+		EnumSort.esort(nums, 0, nums_len - 1);
+		long esort_end = System.currentTimeMillis();
+		save(3);
+		System.out.println("测试结果:" + test() + ";\t" + "串行枚举:" + (esort_end -
+				esort_start) + "ms");
 		// 并行枚举
 		load();
-		long pesortStartTime = System.currentTimeMillis();
-		EnumSort.pesort(array, 0, dataLen - 1);
-		long pesortEndTime = System.currentTimeMillis();
+		long p2esort_start = System.currentTimeMillis();
+		EnumSort.pesort(nums, 0, nums_len - 1, 2);
+		long p2esort_end = System.currentTimeMillis();
+		save(4);
+		System.out.println("测试结果:" + test() + ";\t" + "2线程并行枚举:" + (p2esort_end -
+				p2esort_start) + "ms");
+		// 并行枚举
+		load();
+		long p4esort_start = System.currentTimeMillis();
+		EnumSort.pesort(nums, 0, nums_len - 1, 4);
+		long p4esort_end = System.currentTimeMillis();
+		save(4);
+		System.out.println("测试结果:" + test() + ";\t" + "4线程并行枚举:" + (p4esort_end -
+				p4esort_start) + "ms");
+		// 并行枚举
+		load();
+		long p8esort_start = System.currentTimeMillis();
+		EnumSort.pesort(nums, 0, nums_len - 1, 8);
+		long p8esort_end = System.currentTimeMillis();
+		save(4);
+		System.out.println("测试结果:" + test() + ";\t" + "8线程并行枚举:" + (p8esort_end -
+				p8esort_start) + "ms");
+		// 并行枚举
+		load();
+		long p16esort_start = System.currentTimeMillis();
+		EnumSort.pesort(nums, 0, nums_len - 1, 16);
+		long p16esort_end = System.currentTimeMillis();
+		save(4);
+		System.out.println("测试结果:" + test() + ";\t" + "16线程并行枚举:" + (p16esort_end - p16esort_start) + "ms");
+		// 并行枚举
+		load();
+		long p32esort_start = System.currentTimeMillis();
+		EnumSort.pesort(nums, 0, nums_len - 1, 32);
+		long p32esort_end = System.currentTimeMillis();
+		save(4);
+		System.out.println("测试结果:" + test() + ";\t" + "32线程并行枚举:" + (p32esort_end - p32esort_start) + "ms");
+	}
+
+	private static void merge_sort() throws IOException, InterruptedException {
+		// 串行归并
+		long time = 0;
+		for (int k = 0; k < rerun_times; k++) {
+			load();
+			long msort_start = System.currentTimeMillis();
+			MergeSort.msort(nums, 0, nums_len - 1);
+			long msort_end = System.currentTimeMillis();
+			time += msort_end - msort_start;
+		}
+		save(5);
+		System.out.println("测试结果:" + test() + ";\t" + "串行归并:" + (time / rerun_times) + "ms");
+		// 并行归并
+		time = 0;
+		for (int k = 0; k < rerun_times; k++) {
+			load();
+			long p3msort_start = System.currentTimeMillis();
+			MergeSort.p3msort(nums, 0, nums_len - 1);
+			long p3msort_end = System.currentTimeMillis();
+			time += p3msort_end - p3msort_start;
+		}
 		save(6);
-		System.out.println("测试结果:" + test());
-		System.out.println("并行枚举排序完成！\n");
+		System.out.println("测试结果:" + test() + ";\t" + "3线程并行归并:" + (time / rerun_times) + "ms");
+		// 并行归并
+		time = 0;
+		for (int k = 0; k < rerun_times; k++) {
+			load();
+			long p4msort_start = System.currentTimeMillis();
+			MergeSort.p4msort(nums, 0, nums_len - 1);
+			long p4msort_end = System.currentTimeMillis();
+			time += p4msort_end - p4msort_start;
+		}
+		save(6);
+		System.out.println("测试结果:" + test() + ";\t" + "4线程并行归并:" + (time / rerun_times) + "ms");
+	}
 
-		System.out.println("排序完成！\n");
-
-		System.out.println("串行快速排序用时： " + (qsortEndTime - qsprtStartTime) + "ms\n");
-		System.out.println("并行快速排序用时： " + (pqsortEndTime - pqsortStartTime) +
-				"ms\n");
-		System.out.println("串行归并排序用时： " + (pmsortEndTime - pmsortStartTime) +
-				"ms\n");
-		System.out.println("并行归并排序用时： " + (msortEndTime - msortStartTime) + "ms\n");
-		System.out.println("串行枚举排序用时： " + (esortEndTime - esortStartTime) + "ms\n");
-		System.out.println("并行枚举排序用时： " + (pesortEndTime - pesortStartTime) +
-				"ms\n");
-		System.out.println("程序结束！");
+	public static void main(String[] args) throws IOException, InterruptedException {
+		quick_sort();
+		System.out.println("=================================");
+		enum_sort();
+		System.out.println("=================================");
+		merge_sort();
+		System.out.println(nums_len);
 	}
 }

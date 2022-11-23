@@ -2,7 +2,7 @@
  * @Author: scikkk 203536673@qq.com
  * @Date: 2018-12-29 13:11:40
  * @LastEditors: scikkk
- * @LastEditTime: 2022-11-21 01:46:02
+ * @LastEditTime: 2022-11-23 15:40:03
  * @Description: MergeSort
  */
 
@@ -13,144 +13,175 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
 public class MergeSort implements Runnable {
-	private int begin, end;
-	private int[] array;
-	private CountDownLatch mergeSignal;
+	private int left, right;
+	private int[] nums;
+	private CountDownLatch end_signal;
 
-	public MergeSort(int[] array, int begin, int end) {
-		this.array = array;
-		this.begin = begin;
-		this.end = end;
+	public MergeSort(int[] nums, int left, int right, CountDownLatch end_signal) {
+		this.nums = nums;
+		this.left = left;
+		this.right = right;
+		this.end_signal = end_signal;
 	}
 
-	public MergeSort(int[] array, int begin, int end, CountDownLatch mergeSignal) {
-		this.array = array;
-		this.begin = begin;
-		this.end = end;
-		this.mergeSignal = mergeSignal;
-	}
-
-	public static void merge(int[] array, int p, int q) {
-		int[] brrby = new int[q - p + 1];
-		int r = (p + q) / 2;
-		int bIndex = 0;
-		int cp = p, cr = r + 1;
-		while ((cp <= r) && (cr <= q)) {
-			if (array[cp] < array[cr]) {
-				brrby[bIndex] = array[cp];
-				bIndex++;
-				cp++;
+	public static void merge(int[] nums, int left, int right) {
+		int[] buf_nums = new int[right - left + 1];
+		int mid = (left + right) / 2;
+		int idx = 0;
+		int idx_a = left, idx_b = mid + 1;
+		while ((idx_a <= mid) && (idx_b <= right)) {
+			if (nums[idx_a] < nums[idx_b]) {
+				buf_nums[idx] = nums[idx_a];
+				idx++;
+				idx_a++;
 			} else {
-				brrby[bIndex] = array[cr];
-				bIndex++;
-				cr++;
+				buf_nums[idx] = nums[idx_b];
+				idx++;
+				idx_b++;
 			}
 		}
-		if (cp <= r) {
-			while (cp <= r) {
-				brrby[bIndex] = array[cp];
-				bIndex++;
-				cp++;
-			}
-		} else {
-			while (cr <= q) {
-				brrby[bIndex] = array[cr];
-				bIndex++;
-				cr++;
-			}
+		while (idx_a <= mid) {
+			buf_nums[idx] = nums[idx_a];
+			idx++;
+			idx_a++;
 		}
-		for (int i = 0; i < bIndex; i++) {
-			array[p + i] = brrby[i];
+		while (idx_b <= right) {
+			buf_nums[idx] = nums[idx_b];
+			idx++;
+			idx_b++;
+		}
+		for (int k = 0; k < idx; k++) {
+			nums[left + k] = buf_nums[k];
 		}
 	}
 
-	public static void msort(int[] array, int p, int q) {
-		if (p >= q)
+	public static void msort(int[] nums, int left, int right) {
+		if (left >= right) {
 			return;
-		int r = (p + q) / 2;
-		msort(array, p, r);
-		msort(array, r + 1, q);
-		merge(array, p, q);
+		}
+		int mid = (left + right) / 2;
+		msort(nums, left, mid);
+		msort(nums, mid + 1, right);
+		merge(nums, left, right);
 
 	}
 
-	public static void pmsort(int[] array, int begin, int end) throws IOException, InterruptedException {
+	private static void swap(int[] nums, int a, int b) {
+		int tmp = nums[a];
+		nums[a] = nums[b];
+		nums[b] = tmp;
+	}
+
+	public static void p4msort(int[] nums, int left, int right) throws IOException, InterruptedException {
 		// 均匀划分
-		CountDownLatch mergeSignal = new CountDownLatch(4);
-		int length0 = (end - begin + 1) / 4;
-		Thread thread0 = new Thread(new MergeSort(array, 0, length0, mergeSignal));
-		Thread thread1 = new Thread(new MergeSort(array, length0 + 1, 2 * length0 + 1, mergeSignal));
-		Thread thread2 = new Thread(new MergeSort(array, 2 * length0 + 2, 3 * length0 + 2, mergeSignal));
-		Thread thread3 = new Thread(new MergeSort(array, 3 * length0 + 3, 29999, mergeSignal));
+		CountDownLatch end_signal = new CountDownLatch(4);
+		int sub_len = (right - left + 1) / 4;
+		// 局部排序
+		Thread thread0 = new Thread(new MergeSort(nums, 0, sub_len, end_signal));
+		Thread thread1 = new Thread(new MergeSort(nums, sub_len + 1, 2 * sub_len + 1, end_signal));
+		Thread thread2 = new Thread(new MergeSort(nums, 2 * sub_len + 2, 3 * sub_len + 2, end_signal));
+		Thread thread3 = new Thread(new MergeSort(nums, 3 * sub_len + 3, right, end_signal));
 		thread0.start();
 		thread1.start();
 		thread2.start();
 		thread3.start();
-		mergeSignal.await();
-		// System.out.println("2222");
-		ArrayList<Integer> a0 = new ArrayList();
-		ArrayList<Integer> a1 = new ArrayList();
-		ArrayList<Integer> a2 = new ArrayList();
-		ArrayList<Integer> a3 = new ArrayList();
-		int[] arrayFlags = new int[16];
+		end_signal.await();
+		ArrayList<Integer> a0 = new ArrayList<Integer>();
+		ArrayList<Integer> a1 = new ArrayList<Integer>();
+		ArrayList<Integer> a2 = new ArrayList<Integer>();
+		ArrayList<Integer> a3 = new ArrayList<Integer>();
+		// 正则采样
+		int[] samples = new int[16];
 		for (int k = 0; k < 16; k++) {
-			arrayFlags[k] = array[(end - begin + 1) / 16 * k];
+			samples[k] = nums[(right - left + 1) / 16 * k];
 		}
-		// for (int i = 0; i < 16; i++)
-		// System.out.println(arrayFlags[i]);
-		MergeSort.msort(arrayFlags, 0, 15);
-		// for (int i = 0; i < 16; i++)
-		// System.out.println(arrayFlags[i]);
+		// 采样排序
+		MergeSort.msort(samples, 0, 15);
 		// 全局交换
-		for (int k = begin; k <= end; k++) {
-			if (array[k] <= arrayFlags[4])
-				a0.add(array[k]);
-			else if ((array[k] <= arrayFlags[8]) && (array[k] > arrayFlags[4]))
-				a1.add(array[k]);
-			else if ((array[k] <= arrayFlags[12]) && (array[k] > arrayFlags[8]))
-				a2.add(array[k]);
-			else if (array[k] > arrayFlags[12])
-				a3.add(array[k]);
+		for (int k = left; k <= right; k++) {
+			if (nums[k] <= samples[4])
+				a0.add(nums[k]);
+			else if ((nums[k] <= samples[8]) && (nums[k] > samples[4]))
+				a1.add(nums[k]);
+			else if ((nums[k] <= samples[12]) && (nums[k] > samples[8]))
+				a2.add(nums[k]);
+			else if (nums[k] > samples[12])
+				a3.add(nums[k]);
 			else {
 				System.out.println("错误！");
 				break;
 			}
 		}
 		int idx = 0;
-		for (int k = 0; k < a0.size(); k++) {
-			array[idx] = a0.get(k);
-			idx++;
+		for (int k : a0) {
+			nums[idx++] = k;
 		}
-		for (int k = 0; k < a1.size(); k++) {
-			array[idx] = a1.get(k);
-			idx++;
+		for (int k : a1) {
+			nums[idx++] = k;
 		}
-		for (int k = 0; k < a2.size(); k++) {
-			array[idx] = a2.get(k);
-			idx++;
+		for (int k : a2) {
+			nums[idx++] = k;
 		}
-		for (int k = 0; k < a3.size(); k++) {
-			array[idx] = a3.get(k);
-			idx++;
+		for (int k : a3) {
+			nums[idx++] = k;
 		}
-		mergeSignal = new CountDownLatch(4);
-		thread0 = new Thread(new MergeSort(array, 0, a0.size() - 1, mergeSignal));
-		thread1 = new Thread(new MergeSort(array, a0.size(), a0.size() + a1.size() - 1, mergeSignal));
+		// 归并排序
+		thread0 = new Thread(new MergeSort(nums, 0, a0.size() - 1, end_signal));
+		thread1 = new Thread(new MergeSort(nums, a0.size(), a0.size() + a1.size() - 1, end_signal));
 		thread2 = new Thread(
-				new MergeSort(array, a0.size() + a1.size(), a0.size() + a1.size() + a2.size() - 1, mergeSignal));
-		thread3 = new Thread(new MergeSort(array, a0.size() + a1.size() + a2.size(),
-				a0.size() + a1.size() + a2.size() + a3.size() - 1, mergeSignal));
+				new MergeSort(nums, a0.size() + a1.size(), a0.size() + a1.size() + a2.size() - 1, end_signal));
+		thread3 = new Thread(new MergeSort(nums, a0.size() + a1.size() + a2.size(),
+				a0.size() + a1.size() + a2.size() + a3.size() - 1, end_signal));
 		thread0.start();
 		thread1.start();
 		thread2.start();
 		thread3.start();
-		mergeSignal.await();
+	}
+
+	public static void p3msort(int[] nums, int left, int right) throws IOException, InterruptedException {
+		// 均匀划分
+		CountDownLatch end_signal = new CountDownLatch(3);
+		int sub_len = (right - left + 1) / 3;
+		// 局部排序
+		Thread thread0 = new Thread(new MergeSort(nums, 0, sub_len, end_signal));
+		Thread thread1 = new Thread(new MergeSort(nums, sub_len + 1, 2 * sub_len + 1, end_signal));
+		Thread thread2 = new Thread(new MergeSort(nums, 2 * sub_len + 2, 3 * sub_len + 2, end_signal));
+		thread0.start();
+		thread1.start();
+		thread2.start();
+		end_signal.await();
+		// 正则采样
+		int[] samples = new int[9];
+		for (int k = 0; k < 9; k++) {
+			samples[k] = nums[(right - left + 1) / 9 * k];
+		}
+		// 采样排序
+		MergeSort.msort(samples, 0, 8);
+		// 全局交换
+		int p0 = left - 1, p1 = left - 1;
+		for (int k = left; k <= right; k++) {
+			if (nums[k] <= samples[3]) {
+				p0++;
+				p1++;
+				swap(nums, k, p1);
+				swap(nums, p0, p1);
+			} else if ((nums[k] <= samples[6]) && (nums[k] > samples[3])) {
+				p1++;
+				swap(nums, k, p1);
+			}
+		}
+		// 归并排序
+		thread0 = new Thread(new MergeSort(nums, left, p0, end_signal));
+		thread1 = new Thread(new MergeSort(nums, p0 + 1, p1, end_signal));
+		thread2 = new Thread(new MergeSort(nums, p1 + 1, right, end_signal));
+		thread0.start();
+		thread1.start();
+		thread2.start();
 	}
 
 	@Override
 	public void run() {
-		msort(array, begin, end);
-		// System.out.println("1111");
-		mergeSignal.countDown();
+		msort(nums, left, right);
+		end_signal.countDown();
 	}
 }
